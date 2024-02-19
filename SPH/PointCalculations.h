@@ -9,8 +9,7 @@
 
 using Eigen::Vector2f;
 
-
-float CalculateDensity(const Vector2f& samplePoint, const std::array<Vector2f, Constants::particleNumber>& positions)
+float CalculateDensity(const Vector2f& samplePoint, const std::array<Vector2f, Constants::particleNumber>& positions);
 
 
 #endif //PLANETARY_FORMATION_SIMULATION_POINTCALCULATIONS_H
