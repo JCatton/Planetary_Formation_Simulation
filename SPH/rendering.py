@@ -3,13 +3,16 @@ File used to control purely visual aspects of the simulation
 """
 import numpy as np
 import matplotlib.pyplot as plt
+import imageio.v2 as imageio
+import os
 
 
 class PositionData:
-    def __init__(self, data_location: str, delimiters=","):
-        self.data_location = data_location
-        self.delimiters = delimiters
-        self.positions = np.loadtxt(data_location, delimiter=delimiters)
+    def __init__(self, data, data_location=None, delimiters=None):
+        if type(data) is str:
+            self.positions = np.loadtxt(data_location, delimiter=delimiters)
+        else:
+            self.positions = data
         self.gridx = None
         self.gridy = None
 
@@ -17,14 +20,15 @@ class PositionData:
         plt.plot(self.positions[:, 0], self.positions[:, 1], ".", markersize=3)
         plt.show()
 
-    def _create_grid(self, grid_size=(120, 120)):
-        x = np.linspace(-grid_size[0], grid_size[0], 2*grid_size[0])
-        y = np.linspace(-grid_size[1], grid_size[1], 2*grid_size[1])
+    def _create_grid(self, grid_size):
+        x = np.linspace(-grid_size[0], grid_size[0], 2 * grid_size[0])
+        y = np.linspace(-grid_size[1], grid_size[1], 2 * grid_size[1])
         x_grid, y_grid = np.meshgrid(x, y)
         self.gridx = x_grid
         self.gridy = y_grid
 
-    def calculate_densities(self, smoothing_radius):
+    def calculate_densities(self, smoothing_radius, grid_size):
+        self._create_grid(grid_size)
         points = np.stack([self.gridx.ravel(), self.gridy.ravel()], axis=-1)  # Shape: (num_points, 2)
         # Expand dimensions for broadcasting
         sample_points_exp = np.expand_dims(points, axis=1)  # Shape: (num_points, 1, 2)
@@ -42,9 +46,8 @@ class PositionData:
         density_grid = densities.reshape(self.gridx.shape)
         return density_grid
 
-    def display_densities_heatmap(self, smoothing_radius=10, grid_size=(120, 120)):
-        self._create_grid(grid_size)
-        density_grid = self.calculate_densities(smoothing_radius)
+    def display_densities_heatmap(self, smoothing_radius, grid_size):
+        density_grid = self.calculate_densities(smoothing_radius, grid_size)
         plt.figure(figsize=(8, 6))
         plt.contourf(self.gridx, self.gridy, density_grid, cmap='viridis')
         plt.colorbar()
@@ -57,14 +60,52 @@ class PositionData:
         random_particles = np.random.uniform(low=np.min(self.gridx), high=np.max(self.gridx), size=(number, 2))
         self.positions = np.vstack((self.positions, random_particles))
 
-    def remove_noise(self):
-        self.positions = np.loadtxt(self.data_location, delimiter=self.delimiters)
-
 
 def _smoothing_kernel(radius, dst):
     volume = np.pi * (radius ** 8) / 4
-    value = np.maximum(0, radius**2 - dst**2)
-    return value**3 / volume
+    value = np.maximum(0, radius ** 2 - dst ** 2)
+    return value ** 3 / volume
+
+
+class Animation:
+    def __init__(self, data_location: str, smoothing_radius, grid_size, delimiters=","):
+        self.data_location = data_location
+        self.positions = np.loadtxt(data_location, delimiter=delimiters, skiprows=1)
+        self.density_map = np.zeros((grid_size[0] * 2, grid_size[1] * 2, int(len(self.positions[0, :]) / 2)))
+        self.grid_size = grid_size
+        self.smoothing_radius = smoothing_radius
+        x = np.linspace(-grid_size[0], grid_size[0], 2 * grid_size[0])
+        y = np.linspace(-grid_size[1], grid_size[1], 2 * grid_size[1])
+        self.gridx, self.gridy = np.meshgrid(x, y)
+
+    def calculate_densities(self):
+        for i in range(self.density_map.shape[2]):
+            timestep = PositionData(self.positions[:, 2 * i:2 * i + 2], self.grid_size)
+            self.density_map[:, :, i] = timestep.calculate_densities(self.smoothing_radius, self.grid_size)
+            # print(f"Calculated densities for timestep {i}")
+
+    def animate_densities(self):
+        frames = []  # List to store paths of frame images
+        for i in range(self.density_map.shape[2]):
+            fig, ax = plt.subplots()
+            ax.contourf(self.gridx, self.gridy, self.density_map[:, :, i], cmap='viridis')
+            # Save each frame as a PNG file
+            frame_filename = f'OutputGifs/frame_{i}.png'
+            plt.savefig(frame_filename)
+            plt.close(fig)  # Close the figure to free up memory
+            frames.append(frame_filename)
+
+        # Create GIF from saved frames
+        with imageio.get_writer('density_animation.gif', mode='I') as writer:
+            for frame_filename in frames:
+                image = imageio.imread(frame_filename)
+                writer.append_data(image)
+
+        # Optionally, remove the individual frame files after creating the GIF
+        for frame_filename in frames:
+            os.remove(frame_filename)
+
+        # print("Animation saved as density_animation.gif")
 
 # #from particles import Particle
 # import pylab as pl
