@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import imageio.v2 as imageio
 import os
+import glob
 
 
 class PositionData:
@@ -86,17 +87,23 @@ class Animation:
 
     def animate_densities(self):
         frames = []  # List to store paths of frame images
+
+        # Count existing GIF files in the outputGifs directory
+        existing_gifs = glob.glob('outputGifs/density_animation*.gif')
+        gif_count = len(existing_gifs) + 1  # Increment to name the new file
+
         for i in range(self.density_map.shape[2]):
             fig, ax = plt.subplots()
             ax.contourf(self.gridx, self.gridy, self.density_map[:, :, i], cmap='viridis')
             # Save each frame as a PNG file
-            frame_filename = f'OutputGifs/frame_{i}.png'
+            frame_filename = f'outputGifs/frame_{i}.png'
             plt.savefig(frame_filename)
-            plt.close(fig)  # Close the figure to free up memory
+            # plt.close(fig)  # Close the figure to free up memory
             frames.append(frame_filename)
 
         # Create GIF from saved frames
-        with imageio.get_writer('density_animation.gif', mode='I') as writer:
+        gif_filename = f'outputGifs/density_animation ({gif_count}).gif'
+        with imageio.get_writer(gif_filename, mode='I') as writer:
             for frame_filename in frames:
                 image = imageio.imread(frame_filename)
                 writer.append_data(image)
@@ -104,6 +111,10 @@ class Animation:
         # Optionally, remove the individual frame files after creating the GIF
         for frame_filename in frames:
             os.remove(frame_filename)
+
+test = Animation("Data/AnimationTestData.txt", smoothing_radius=30, grid_size=(60, 60), delimiters=";")
+test.calculate_densities()
+test.animate_densities()
 
         # print("Animation saved as density_animation.gif")
 
