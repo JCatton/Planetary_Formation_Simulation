@@ -5,17 +5,17 @@
 #include <fstream>
 #include "Constants.h"
 
-using Eigen::Vector2f;
+using Constants::vector2;
 
-const Vector2f boundsSize {Constants::boundsSize[0], Constants::boundsSize[1]};
+const vector2 boundsSize {Constants::boundsSize[0], Constants::boundsSize[1]};
 
 
 float sign(float value) {
     return static_cast<float>((value > 0) - (value < 0));
 }
 
-void resolveBoundaryCollisions(Vector2f &position, Vector2f &velocity, float& particleSize) {
-    Vector2f halfBoundsSize = boundsSize / 2 - particleSize * Vector2f::Ones();
+void resolveBoundaryCollisions(vector2 &position, vector2 &velocity, real_t& particleSize) {
+    vector2 halfBoundsSize = boundsSize / 2 - particleSize * vector2::Ones();
 
     if (std::abs(position.x()) > halfBoundsSize.x()) {
         position.x() = halfBoundsSize.x() * sign(position.x());
@@ -29,7 +29,7 @@ void resolveBoundaryCollisions(Vector2f &position, Vector2f &velocity, float& pa
 
 }
 
-void plotter(std::array<Vector2f, Constants::particleNumber> &positions) {
+void plotter(std::array<vector2, Constants::particleNumber> &positions) {
     std::ofstream MyFile(R"(C:\Users\jonte\CLionProjects\Planetary_Formation_Simulation\Position_Data.txt)");
     if (MyFile.is_open())
     {
@@ -45,16 +45,16 @@ void plotter(std::array<Vector2f, Constants::particleNumber> &positions) {
 
 
 void start() {
-    std::array<Vector2f, Constants::particleNumber> positions {};
-    std::array<Vector2f, Constants::particleNumber> velocities {};
+    std::array<vector2, Constants::particleNumber> positions {};
+    std::array<vector2, Constants::particleNumber> velocities {};
 
     int particlesPerRow = static_cast<int>(std::sqrt(Constants::particleNumber));
     int particlesPerCol = (Constants::particleNumber - 1) / particlesPerRow + 1;
-    float spacing = Constants::particleSize*2 + Constants::particleSpacing;
+    real_t spacing = Constants::particleSize*2 + Constants::particleSpacing;
 
     for (int i = 0; i < Constants::particleNumber; i++) {
-        float x = (i % particlesPerRow - particlesPerRow / 2.f + 0.5f) * spacing;
-        float y = (i / particlesPerRow - particlesPerCol / 2.f + 0.5f) * spacing;
+        real_t x = (i % particlesPerRow - particlesPerRow / 2.f + 0.5f) * spacing;
+        real_t y = (i / particlesPerRow - particlesPerCol / 2.f + 0.5f) * spacing;
         positions[i] = {x, y};
     }
 
