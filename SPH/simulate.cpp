@@ -4,33 +4,62 @@
 #include <cmath>
 #include <fstream>
 #include "Constants.h"
+#include "PointCalculations.h"
 
 using Constants::vector2;
+using std::array;
 
 const vector2 boundsSize {Constants::boundsSize[0], Constants::boundsSize[1]};
 
 
-float sign(float value) {
-    return static_cast<float>((value > 0) - (value < 0));
+float Sign(real_t value) {
+    return static_cast<real_t>((value > 0) - (value < 0));
 }
 
-void resolveBoundaryCollisions(vector2 &position, vector2 &velocity, real_t& particleSize) {
+void ResolveBoundaryCollisions(vector2 &position, vector2 &velocity, real_t& particleSize) {
     vector2 halfBoundsSize = boundsSize / 2 - particleSize * vector2::Ones();
 
     if (std::abs(position.x()) > halfBoundsSize.x()) {
-        position.x() = halfBoundsSize.x() * sign(position.x());
+        position.x() = halfBoundsSize.x() * Sign(position.x());
         velocity.x() *= -1 * Constants::damping;
     }
 
     if (std::abs(position.y()) > halfBoundsSize.y()) {
-        position.y() = halfBoundsSize.y() * sign(position.y());
+        position.y() = halfBoundsSize.y() * Sign(position.y());
         velocity.y() *= -1 * Constants::damping;
     }
 
 }
 
-void plotter(std::array<vector2, Constants::particleNumber> &positions) {
-    std::ofstream MyFile(R"(C:\Users\jonte\CLionProjects\Planetary_Formation_Simulation\Position_Data.txt)");
+void SimulationStep(std::array<vector2, Constants::particleNumber> &positions, std::array<vector2, Constants::particleNumber> &velocities, real_t particleSize) {
+    real_t deltaTime {0.1};
+
+    // Generate and Populate Density Array
+    array<real_t, Constants::particleNumber> densities = {};
+    for (size_t i = 0; i < Constants::particleNumber; i++) {
+        densities[i] = CalculateDensity(positions[i], positions);
+    }
+
+    // Calculate and Apply Pressure Forces
+    for (size_t i = 0; const auto &position: positions) {
+        vector2 pressureForce = CalculatePressureForce(position, positions, densities);
+        vector2 pressureAcceleration = pressureForce / densities[i];
+        velocities[i] += pressureAcceleration * deltaTime;
+    }
+
+    for (size_t i = 0; auto &position: positions) {
+        position += velocities[i] * deltaTime;
+
+        ResolveBoundaryCollisions(position, velocities[i], particleSize);
+    }
+
+}
+
+void Plotter(std::array<vector2, Constants::particleNumber> &positions, const std::string &suffix) {
+    std::string baseFilename {R"(C:\Users\jonte\CLionProjects\Planetary_Formation_Simulation\Position_Data)"};
+    std::string extension {".txt"};
+    std::string filename = baseFilename + "_" + suffix + extension;
+    std::ofstream MyFile(filename);
     if (MyFile.is_open())
     {
         std::cout << "Greetings";
@@ -44,12 +73,12 @@ void plotter(std::array<vector2, Constants::particleNumber> &positions) {
 }
 
 
-void start() {
+void Start() {
     std::array<vector2, Constants::particleNumber> positions {};
     std::array<vector2, Constants::particleNumber> velocities {};
 
     int particlesPerRow = static_cast<int>(std::sqrt(Constants::particleNumber));
-    int particlesPerCol = (Constants::particleNumber - 1) / particlesPerRow + 1;
+    int particlesPerCol = static_cast<int>((Constants::particleNumber - 1) / particlesPerRow + 1);
     real_t spacing = Constants::particleSize*2 + Constants::particleSpacing;
 
     for (int i = 0; i < Constants::particleNumber; i++) {
@@ -58,12 +87,16 @@ void start() {
         positions[i] = {x, y};
     }
 
-    plotter(positions);
+    Plotter(positions, "initial");
+    for (int i {0}; i <= Constants::maxIter; i++) {
+        SimulationStep(positions, velocities, Constants::particleSize);
+    }
+    Plotter(positions, "final");
 }
 
 int main(int argc, char** argv) {
     std::cout << "Started";
-    start();
+    Start();
     std::cout << "Ended...";
 }
 
