@@ -15,6 +15,7 @@
 - [ ] Thermal Pressure from a cooling planet?
   - Could be modelled just the same as a star?
 - [ ] 3D -> May not be too necessary as could do planar assumption where off axis would have collided out leaving one plane
+- [ ] Dynamic step size
 - [ ] Particles act as different materials
   - This should enable planetary differentiation
     - Occurring mainly due to thermal pressure
