@@ -14,8 +14,7 @@
 - [ ] Thermal Pressure from a star?
 - [ ] Thermal Pressure from a cooling planet?
   - Could be modelled just the same as a star?
-- [ ] 3D
-- [ ] Dynamic step size
+- [ ] 3D -> May not be too necessary as could do planar assumption where off axis would have collided out leaving one plane
 - [ ] Particles act as different materials
   - This should enable planetary differentiation
     - Occurring mainly due to thermal pressure
@@ -24,6 +23,7 @@
     - Radial Migration 
     - Vertical Settling
 - [ ] Magnetic Field Modelling
+- [ ] Migration of Moons -> could be cool to extrapolate site of formation based on composition, e.g. formed far out so rocky then migrated inwards so has rocky core + e.g. CO2 gas envelope
 - ### Ancillary Systems
 
 - [ ] Develop fast and easy to use system for writing data to a file.
@@ -41,6 +41,7 @@ both the simulation parameters and particle parameters and particle data.
     - Due to Lagrangian based simulation not confined to grid --> Open system...
   - [ ] Angular Momentum
   - [ ] Mass
+  - [ ] Can also Check Entropy -> Mattheus was doing this in his simulations
 - Does it look right?
 ### Body Analysis
 - [ ] How is a continuous body measured?
