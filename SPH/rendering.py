@@ -112,10 +112,13 @@ class Animation:
         for frame_filename in frames:
             os.remove(frame_filename)
 
-test = Animation("Data/AnimationTestData.txt", smoothing_radius=30, grid_size=(60, 60), delimiters=";")
-test.calculate_densities()
-test.animate_densities()
+# test = Animation("Data/AnimationTestData.txt", smoothing_radius=30, grid_size=(60, 60), delimiters=";")
+# test.calculate_densities()
+# test.animate_densities()
 
+x = PositionData("", r"SPH/Data/Position_Data.txt", delimiters=",")
+x.display_positions_on_grid()
+x.display_densities_heatmap(20, (10, 10))
         # print("Animation saved as density_animation.gif")
 
 # #from particles import Particle
