@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import imageio.v2 as imageio
 import os
 import glob
+from scipy.spatial import cKDTree
 # Define the smoothing kernel function
 
 
@@ -27,27 +28,58 @@ class PositionData:
         plt.plot(self.positions[:, 0], self.positions[:, 1], ".", markersize=3)
         plt.show()
 
-    def _create_grid(self, x_size: tuple[int, int], y_size: tuple[int, int]):
-        x = np.linspace(x_size[0], x_size[1], x_size[1] - x_size[0] + 1)
-        y = np.linspace(y_size[0], y_size[1], y_size[1] - y_size[0] + 1)
+    def _create_grid(self, xSize: tuple[int, int], ySize: tuple[int, int]):
+        x = np.linspace(xSize[0], xSize[1], xSize[1] - xSize[0] + 1)
+        y = np.linspace(ySize[0], ySize[1], ySize[1] - ySize[0] + 1)
         self.grid = np.meshgrid(x, y)
 
-    def calculate_densities(self, smoothing_radius, x_size: tuple[int, int], y_size: tuple[int, int]):
+    def calculate_densities(self, smoothing_radius, xSize: tuple[int, int], ySize: tuple[int, int]):
+        # Faster method for <≈ 48000
         if self.positions is None:
             raise ValueError("Position data not loaded.")
-        self._create_grid(x_size, y_size)
+        self._create_grid(xSize, ySize)
         points = np.stack([self.grid[0].ravel(), self.grid[1].ravel()], axis=-1)
         sq_distances = np.sum((points[:, np.newaxis, :] - self.positions[np.newaxis, :, :]) ** 2, axis=2)
         influences = smoothing_kernel(smoothing_radius, sq_distances)
         densities = np.sum(influences, axis=1)
         return densities.reshape(self.grid[0].shape)
 
-    def display_densities_heatmap(self, smoothing_radius, x_size: tuple[int, int], y_size: tuple[int, int]):
-        density_grid = self.calculate_densities(smoothing_radius, x_size, y_size)
+    def calculate_densities_kd_tree(self, smoothing_radius, xSize: tuple[int, int], ySize: tuple[int, int]):
+        # Faster method for >≈ 48000
+        if self.positions is None:
+            raise ValueError("Position data not loaded.")
+        self._create_grid(xSize, ySize)
+        grid_points = np.vstack([self.grid[0].ravel(), self.grid[1].ravel()]).T
+        tree = cKDTree(self.positions)
+        densities = np.zeros(grid_points.shape[0], dtype=np.float64)
+        for i, point in enumerate(grid_points):
+            neighbors_idx = tree.query_ball_point(point, smoothing_radius)
+            if neighbors_idx:
+                distances = np.sqrt(np.sum((self.positions[neighbors_idx] - point) ** 2, axis=1))
+                influences = smoothing_kernel(smoothing_radius, distances)
+                densities[i] = np.sum(influences)
+
+        return densities.reshape(self.grid[0].shape)
+
+    def display_densities_heatmap(self, smoothing_radius, xSize: tuple[int, int], ySize: tuple[int, int]):
+        # Faster method for <≈ 48000
+        density_grid = self.calculate_densities(smoothing_radius, xSize, ySize)
         plt.figure(figsize=(10, 8))
         plt.contourf(self.grid[0], self.grid[1], density_grid, levels=40)
         plt.colorbar()
         plt.title('Density Distribution')
+        plt.xlabel('X axis')
+        plt.ylabel('Y axis')
+        plt.tight_layout()
+        plt.show()
+
+    def display_densities_heatmap_kd_tree(self, smoothing_radius, xSize: tuple[int, int], ySize: tuple[int, int]):
+        # Faster method for >≈ 48000
+        density_grid = self.calculate_densities_kd_tree(smoothing_radius, xSize, ySize)
+        plt.figure(figsize=(10, 8))
+        plt.contourf(self.grid[0], self.grid[1], density_grid, levels=40)
+        plt.colorbar()
+        plt.title('Density Distribution (KD-tree Method)')
         plt.xlabel('X axis')
         plt.ylabel('Y axis')
         plt.tight_layout()
