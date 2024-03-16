@@ -71,7 +71,12 @@ class PositionData:
         plt.xlabel('X axis')
         plt.ylabel('Y axis')
         plt.tight_layout()
-        plt.show()
+        directory = "SPH/DensityPositions"
+        # Check if the directory exists, and create it if it doesn't
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        plt.savefig(f"{directory}/density_distribution.pdf")
+        plt.clf()
 
     def display_densities_heatmap_kd_tree(self, smoothing_radius, xSize: tuple[int, int], ySize: tuple[int, int]):
         # Faster method for >≈ 48000
@@ -83,7 +88,16 @@ class PositionData:
         plt.xlabel('X axis')
         plt.ylabel('Y axis')
         plt.tight_layout()
-        plt.show()
+        directory = "SPH/DensityPositions"
+        # Check if the directory exists, and create it if it doesn't
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        plt.savefig(f"{directory}/density_distribution.pdf")
+        plt.clf()
+
+
+#%%
+
 
 
 # Will fix grids on this tomorrow ≈ 13:00/14:00 ish
