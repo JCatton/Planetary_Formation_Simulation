@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <array>
 #include <Eigen/Dense>
+#include <iostream>
 #include "Constants.h"
 #include "PointCalculations.h"
 
@@ -56,9 +57,6 @@ real_t CalculateDensity(
     const real_t mass = 1.f;
 
     for (const auto &position: positions) {
-        if (position == samplePoint) {
-            continue;
-        }
         real_t dst = (position - samplePoint).norm();
         real_t influence = SmoothingKernel(Constants::smoothingRadius, dst);
         density += mass * influence;
@@ -75,12 +73,12 @@ vector2 CalculateDensityGradient(
     static const auto stepSize = static_cast<real_t>(0.001);
 
     vector2 propertyGradient = vector2{0.f, 0.f};
-    for (size_t i = 0; const auto &position: positions) {
-        if (position == samplePoint) {
+    for (int i{0}; i <= Constants::maxIter; i++) {
+        if (positions[i] == samplePoint) {
             continue;
         }
-        real_t dst = (position - samplePoint).norm();
-        vector2 dir = (position - samplePoint) / dst;
+        real_t dst = (positions[i] - samplePoint).norm();
+        vector2 dir = (positions[i] - samplePoint) / dst;
         real_t slope = SmoothingKernelDerivative(Constants::smoothingRadius, dst);
         propertyGradient += -dir * slope * mass;
     }
@@ -94,11 +92,11 @@ real_t CalculateProperty(
         const array<real_t, Constants::particleNumber> &particleProperty) {
     real_t property{0.f};
 
-    for (size_t i = 0; const auto &position: positions) {
-        if (position == samplePoint) {
+    for (int i{0}; i <= Constants::maxIter; i++) {
+        if (positions[i] == samplePoint) {
             continue;
         }
-        real_t dst = (position - samplePoint).norm();
+        real_t dst = (positions[i] - samplePoint).norm();
         real_t influence = SmoothingKernel(Constants::smoothingRadius, dst);
         real_t density = CalculateDensity(samplePoint, positions);
         property += particleProperty[i] * influence * mass / density;
@@ -116,12 +114,12 @@ vector2 CalculatePropertyGradient(
     static const auto stepSize = static_cast<real_t>(0.001);
 
     vector2 propertyGradient = vector2{0.f, 0.f};
-    for (size_t i = 0; const auto &position: positions) {
-        if (position == samplePoint) {
+    for (int i{0}; i <= Constants::maxIter; i++) {
+        if (positions[i] == samplePoint) {
             continue;
         }
-        real_t dst = (position - samplePoint).norm();
-        vector2 dir = (position - samplePoint) / dst;
+        real_t dst = (positions[i] - samplePoint).norm();
+        vector2 dir = (positions[i] - samplePoint) / dst;
         real_t slope = SmoothingKernelDerivative(Constants::smoothingRadius, dst);
         real_t density = densities[i];
         propertyGradient += -particleProperty[i] * dir * slope * mass / density;
@@ -144,12 +142,15 @@ vector2 CalculatePressureForce(
     static const auto stepSize = static_cast<real_t>(0.001);
 
     vector2 propertyGradient = vector2{0.f, 0.f};
-    for (size_t i = 0; const auto &position: positions) {
-        if (position == samplePoint) {
+    for (int i{0}; i <= Constants::maxIter; i++) {
+        if (positions[i] == samplePoint) {
             continue;
         }
-        real_t dst = (position - samplePoint).norm();
-        vector2 dir = (position - samplePoint) / dst;
+        real_t dst = (positions[i] - samplePoint).norm();
+        if (dst == 0) {
+            std::cout << "Distance is zero" << positions[i] << " - " << samplePoint;
+        }
+        vector2 dir = (positions[i] - samplePoint) / dst;
         real_t slope = SmoothingKernelDerivative(Constants::smoothingRadius, dst);
         real_t density = densities[i];
         propertyGradient += -ConvertDensityToPressure(density) * dir * slope * mass / density;
