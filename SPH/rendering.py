@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import re
-import imageio
+import imageio.v2 as imageio
 from scipy.spatial import cKDTree
 
 
