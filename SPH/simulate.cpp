@@ -34,7 +34,7 @@ void ResolveBoundaryCollisions(vector2 &position, vector2 &velocity, real_t &par
 void SimulationStep(
         std::array<vector2, Constants::particleNumber> &positions,
         std::array<vector2, Constants::particleNumber> &velocities, real_t particleSize) {
-    real_t deltaTime{10};
+    real_t deltaTime{0.1};
 
     // Generate and Populate Density Array
     array<real_t, Constants::particleNumber> densities = {};
@@ -43,17 +43,17 @@ void SimulationStep(
     }
 
     // Calculate and Apply Pressure Forces
-    for (size_t i{0}; i <= Constants::maxIter; i++) {
+    for (size_t i{0}; i < Constants::particleNumber; i++) {
         vector2 pressureForce = CalculatePressureForce(positions[i], positions, densities);
         vector2 pressureAcceleration = pressureForce / densities[i];
-        std::cout << "\nTest " << i << "\n";
-        std::cout << "Pressure Acceleration\n" << pressureAcceleration * deltaTime << "\n";
-        std::cout << "Velocity Before\n" << velocities[i]<< "\n";
+//        std::cout << "\nTest " << i << "\n";
+//        std::cout << "Pressure Acceleration\n" << pressureAcceleration * deltaTime << "\n";
+//        std::cout << "Velocity Before\n" << velocities[i]<< "\n";
         velocities[i] += pressureAcceleration * deltaTime;
-        std::cout << "Velocity After\n" << velocities[i]<< "\n";
+//        std::cout << "Velocity After\n" << velocities[i]<< "\n";
     }
 
-    for (size_t i{0}; i <= Constants::maxIter; i++) {
+    for (size_t i{0}; i < Constants::particleNumber; i++) {
         positions[i] += velocities[i] * deltaTime;
 
         ResolveBoundaryCollisions(positions[i], velocities[i], particleSize);
@@ -68,7 +68,7 @@ void Plotter(std::array<vector2, Constants::particleNumber> &positions, const st
     std::ofstream MyFile(filename);
     if (MyFile.is_open()) {
         for (auto position: positions) {
-            std::cout << "X position is: " << position.x() << std::endl;
+//            std::cout << "\nX position is: " << position.x() << "Y position is: " << position.y() << std::endl;
             MyFile << position.x() << "," << position.y() << "\n";
         }
         MyFile.close();
@@ -88,14 +88,15 @@ void Start() {
         real_t x = (i % particlesPerRow - particlesPerRow / 2.f + 0.5f) * spacing;
         real_t y = (i / particlesPerRow - particlesPerCol / 2.f + 0.5f) * spacing;
         positions[i] = {x, y};
-        std::cout << "Position " << i << " is " << positions[i] << "\n";
+        std::cout << "\nPosition " << i << " is " << positions[i].x() << " " << positions[i].y() << "\n";
         velocities[i] = {0, 0};
     }
 
     Plotter(positions, "initial");
-    for (size_t i{0}; i <= Constants::maxIter; i++) {
-        if (i % 100 == 0) {
+    for (size_t i{0}; i < Constants::maxIter; i++) {
+        if (i % 10 == 0) {
             std::cout << i << "\n";
+            Plotter(positions, std::to_string(i));
         }
         SimulationStep(positions, velocities, Constants::particleSize);
         if (positions[0].hasNaN()) {
@@ -112,12 +113,3 @@ int main(int argc, char **argv) {
     Start();
     std::cout << "Ended...";
 }
-
-//void update(float deltaT) {
-//    for (int i {0}; i< std::size(positions); i++) {
-//        positions[i] = positions[i] + velocities[i] * deltaT;
-//
-//        resolveBoundaryCollisions(positions[i], velocities[i], particleSize);
-//    }
-//}
-
